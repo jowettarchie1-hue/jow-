@@ -51,6 +51,18 @@ jow game.jow       # run a script
 | `delete file notes.txt` | delete a file |
 | `bye` | exit |
 
+## Quoted strings
+
+Use quotes to protect text from variable replacement and filler stripping:
+
+```
+say "you find a sword"                        → you find a sword
+say "your health is" hp                       → your health is 100
+say "you entered the dark castle"             → you entered the dark castle
+```
+
+Without quotes, words like `a`, `the`, `your` are stripped and variable names are replaced with their values.
+
 ## Word numbers
 
 You can use words instead of digits: `zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty hundred thousand`

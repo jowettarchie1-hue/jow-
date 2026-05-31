@@ -69,6 +69,13 @@ static int word_to_num(const char *w, int *out) {
 
 /* ── evaluate: resolve one token to its string value ────────────────────── */
 static void evaluate(const char *tok, char *out, size_t sz) {
+    /* quoted literal — strip quotes, return as-is */
+    if (tok[0] == '"') {
+        size_t len = strlen(tok);
+        size_t cpy = (len >= 2) ? len-2 : 0;
+        if (cpy >= sz) cpy = sz-1;
+        strncpy(out, tok+1, cpy); out[cpy] = '\0'; return;
+    }
     const char *v = get_var(tok);
     if (v) { strncpy(out, v, sz-1); return; }
     int n; if (word_to_num(tok, &n)) { snprintf(out, sz, "%d", n); return; }
@@ -82,7 +89,14 @@ static int tokenize(const char *line, char toks[][MAX_TOK_LEN], int maxn) {
         while (*p==' '||*p=='\t') p++;
         if (!*p) break;
         int i = 0;
-        while (*p && *p!=' ' && *p!='\t' && i < MAX_TOK_LEN-1) toks[n][i++] = *p++;
+        if (*p == '"') {
+            /* quoted string — keep as single token including spaces */
+            toks[n][i++] = *p++;
+            while (*p && *p != '"' && i < MAX_TOK_LEN-2) toks[n][i++] = *p++;
+            if (*p == '"') toks[n][i++] = *p++;
+        } else {
+            while (*p && *p!=' ' && *p!='\t' && *p!='"' && i < MAX_TOK_LEN-1) toks[n][i++] = *p++;
+        }
         toks[n][i] = '\0'; if (i) n++;
     }
     return n;
@@ -101,7 +115,7 @@ static int strip_filler(char toks[][MAX_TOK_LEN], int n) {
     char tmp[MAX_TOK][MAX_TOK_LEN]; int m = 0;
     strncpy(tmp[m++], toks[0], MAX_TOK_LEN-1);
     for (int i = 1; i < n; i++)
-        if (!is_filler(toks[i])) strncpy(tmp[m++], toks[i], MAX_TOK_LEN-1);
+        if (toks[i][0]=='"' || !is_filler(toks[i])) strncpy(tmp[m++], toks[i], MAX_TOK_LEN-1);
     for (int i = 0; i < m; i++) strncpy(toks[i], tmp[i], MAX_TOK_LEN-1);
     return m;
 }
