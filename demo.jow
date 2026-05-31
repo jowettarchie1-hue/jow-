@@ -1,0 +1,9 @@
+say hello world
+set user to Archie
+say welcome user
+set x to 5
+if x is 5 then say x is five
+if x is 3 then say this should not print
+repeat 3 times say counting
+ask what do you want to say
+say you said answer

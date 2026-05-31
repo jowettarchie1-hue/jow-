@@ -1,0 +1,11 @@
+jow
+*.o
+.jow_vars
+*.swp
+__pycache__/
+*.py
+*.pt
+*.pkl
+*.json
+*.bin
+*.log
