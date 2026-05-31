@@ -146,8 +146,18 @@ static int eval_cond(const char *content, char *action_out, size_t action_sz) {
         else             { if (n>2) strncpy(phrase,toks[2],sizeof(phrase)-1); act_start=3; }
         join(toks, act_start, n, action_out, action_sz);
         const char *ans = get_var("answer"); if (!ans) return 0;
+        /* strip filler from answer before comparing so "what is your pet called"
+           matches phrase "what is pet called" (your = filler) */
+        char atoks[MAX_TOK][MAX_TOK_LEN];
+        int an = tokenize(ans, atoks, MAX_TOK);
+        char stripped_ans[MAX_LINE] = "";
+        for (int i = 0; i < an; i++) {
+            if (is_filler(atoks[i])) continue;
+            if (stripped_ans[0]) strncat(stripped_ans," ",sizeof(stripped_ans)-strlen(stripped_ans)-1);
+            strncat(stripped_ans, atoks[i], sizeof(stripped_ans)-strlen(stripped_ans)-1);
+        }
         char la[MAX_VAL_LEN], lp[MAX_LINE];
-        strncpy(la,ans,sizeof(la)-1); strncpy(lp,phrase,sizeof(lp)-1);
+        strncpy(la,stripped_ans,sizeof(la)-1); strncpy(lp,phrase,sizeof(lp)-1);
         for (char *p=la;*p;p++) *p=tolower(*p);
         for (char *p=lp;*p;p++) *p=tolower(*p);
         return strstr(la,lp) != NULL;
