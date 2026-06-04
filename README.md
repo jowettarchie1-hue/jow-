@@ -83,3 +83,11 @@ Variables are saved between sessions in `~/.jow_vars` so your game state is reme
 ## License
 
 MIT
+## functions/snippets
+can store code to reuse by doing this
+```
+snippet test say hello
+use test
+```
+should be in this format "snippet [name] [code]"
+snippets can be used with "use [name]"

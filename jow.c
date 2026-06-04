@@ -11,7 +11,9 @@
 #define MAX_VAR_LEN 128
 #define MAX_VAL_LEN 512
 #define MAX_SEGS    32
-
+#define MAX_SNIPPETS 128
+#define MAX_SNIP_NAME 128
+#define MAX_SNIP_BODY 4096
 /* ── variables ──────────────────────────────────────────────────────────── */
 static char var_names[MAX_VARS][MAX_VAR_LEN];
 static char var_vals [MAX_VARS][MAX_VAL_LEN];
@@ -51,6 +53,15 @@ static void save_vars(void) {
         fprintf(f, "%s=%s\n", var_names[i], var_vals[i]);
     fclose(f);
 }
+
+/* ── snippets ────────────────────────────────────────────────────────────── */
+typedef struct {
+    char name[MAX_SNIP_NAME];
+    char body[MAX_SNIP_BODY];
+} Snippet;
+
+static Snippet snippets[MAX_SNIPPETS];
+static int snippet_count = 0;
 
 /* ── word numbers ────────────────────────────────────────────────────────── */
 static const struct { const char *w; int v; } WNUMS[] = {
@@ -270,6 +281,39 @@ static void run_chain(Segment *segs, int ns, int repl) {
     }
 }
 
+/* ── snippet helpers ─────────────────────────────────────────────────────── */
+static Snippet *find_snippet(const char *name) {
+    for (int i = 0; i < snippet_count; i++)
+        if (strcasecmp(snippets[i].name, name) == 0) return &snippets[i];
+    return NULL;
+}
+
+static void add_snippet(const char *name, const char *body) {
+    Snippet *s = find_snippet(name);
+    if (s) {
+        strncpy(s->body, body, MAX_SNIP_BODY - 1);
+        s->body[MAX_SNIP_BODY - 1] = '\0';
+        return;
+    }
+
+    if (snippet_count >= MAX_SNIPPETS)
+        return;
+
+    strncpy(snippets[snippet_count].name,
+            name,
+            MAX_SNIP_NAME - 1);
+
+    snippets[snippet_count].name[MAX_SNIP_NAME - 1] = '\0';
+
+    strncpy(snippets[snippet_count].body,
+            body,
+            MAX_SNIP_BODY - 1);
+
+    snippets[snippet_count].body[MAX_SNIP_BODY - 1] = '\0';
+
+    snippet_count++;
+}
+
 /* ── execute_line ────────────────────────────────────────────────────────── */
 void execute_line(const char *src, int repl) {
     while (*src==' '||*src=='\t') src++;
@@ -389,6 +433,24 @@ void execute_line(const char *src, int repl) {
         } else {
             run_chain(segs,ns,repl);
         }
+        return;
+    }
+    /* snippet <name> <body> */
+    if (strcasecmp(cmd, "snippet") == 0 && n >= 3) {
+        char body[MAX_SNIP_BODY];
+        join(toks, 2, n, body, sizeof(body));
+        add_snippet(toks[1], body);
+        printf("stored snippet '%s'\n", toks[1]);
+        return;
+    }
+    /* use <snippet_name> */
+    if (strcasecmp(cmd, "use") == 0 && n >= 2) {
+        Snippet *s = find_snippet(toks[1]);
+        if (!s) {
+            printf("snippet '%s' not found\n", toks[1]);
+            return;
+        }
+        execute_line(s->body, repl);
         return;
     }
     /* bye */
